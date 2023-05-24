@@ -1,0 +1,40 @@
+﻿version: "1"
+networks:
+  deploy-guide-dev:
+    driver: bridge
+services:
+  blazor-server:
+    image: blazor-server
+    container_name: blazor-server
+    build:
+      context: ..
+      dockerfile: WebUI/Dockerfile
+    ports:
+      - 5000:5000
+    networks: 
+      - deploy-guide-dev
+    depends_on: 
+      - timely-skills-db
+  timely-skills-db:
+    container_name: timely-skills-db
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: timely-skills-db
+    ports:
+      - "5432:5432"
+    restart: always
+    networks:
+      - deploy-guide-dev
+    volumes:
+      - app_data:/var/lib/postgresql
+  
+volumes:
+  app_data:
+      
+    
+    
+    
+      
+  
