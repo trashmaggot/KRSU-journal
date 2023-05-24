@@ -22,6 +22,7 @@ var app = builder.Build();
 var serviceScope = app.Services.CreateScope();
 var dataContext = serviceScope.ServiceProvider.GetService<Context>();
 dataContext!.Database.EnsureCreated();
+await dataContext.SeedData();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
