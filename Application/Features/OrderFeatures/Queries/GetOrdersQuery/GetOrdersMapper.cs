@@ -1,4 +1,5 @@
-﻿using Application.Features.OrderFeatures.Commands.CreateOrderCommand;
+﻿using Application.Common.DTOs;
+using Application.Features.OrderFeatures.Commands.CreateOrderCommand;
 using AutoMapper;
 using Domain.Entities;
 
@@ -9,5 +10,6 @@ public sealed class GetOrdersMapper : Profile
     public GetOrdersMapper()
     {
         CreateMap<Order, GetOrdersResponse>();
+        CreateMap<ContactInfo, ContactInfoDto>();
     }
 }

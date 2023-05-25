@@ -12,40 +12,40 @@
 <MudText Class="mb-8">This component demonstrates creating order feature.</MudText>
 
 <MudCard>
-	<MudForm Model="@Model" @ref="@_form" Validation="@(_orderValidator.ValidateValue)" ValidationDelay="0">
+	<MudForm Model="@_model" @ref="@_form" Validation="@(_orderValidator.ValidateValue)" ValidationDelay="0">
 		<MudCardContent>
-				<MudTextField @bind-Value="Model.Sender.Name"
-							  For="@(() => Model.Sender.Name)"
+				<MudTextField @bind-Value="_model.Sender.Name"
+							  For="@(() => _model.Sender.Name)"
 							  Immediate="true"
 							  Label="Sender Name" />
 
-				<MudTextField @bind-Value="Model.Sender.City"
-							  For="@(() => Model.Sender.City)"
+				<MudTextField @bind-Value="_model.Sender.City"
+							  For="@(() => _model.Sender.City)"
 							  Immediate="true"
 							  Label="Sender City" />
 
-				<MudTextField @bind-Value="Model.Sender.Address"
-				              For="@(() => Model.Sender.Address)"
+				<MudTextField @bind-Value="_model.Sender.Address"
+				              For="@(() => _model.Sender.Address)"
 				              Immediate="true"
 				              Label="Sender Address" />
 				
-				<MudTextField @bind-Value="Model.Receiver.Name"
-				              For="@(() => Model.Receiver.Name)"
+				<MudTextField @bind-Value="_model.Receiver.Name"
+				              For="@(() => _model.Receiver.Name)"
 				              Immediate="true"
 				              Label="Receiver Name" />
 				
-				<MudTextField @bind-Value="Model.Receiver.City"
-				              For="@(() => Model.Receiver.City)"
+				<MudTextField @bind-Value="_model.Receiver.City"
+				              For="@(() => _model.Receiver.City)"
 				              Immediate="true"
 				              Label="Receiver City" />
 				
-				<MudTextField @bind-Value="Model.Receiver.Address"
-				              For="@(() => Model.Receiver.Address)"
+				<MudTextField @bind-Value="_model.Receiver.Address"
+				              For="@(() => _model.Receiver.Address)"
 				              Immediate="true"
 				              Label="Receiver Address" />
 				
-				<MudTextField @bind-Value="Model.Weight"
-				              For="@(() => Model.Weight)"
+				<MudTextField @bind-Value="_model.Weight"
+				              For="@(() => _model.Weight)"
 				              Immediate="true"
 				              Label="Weight" />
 				
@@ -65,20 +65,20 @@
 
 	readonly CreateOrderRequestValidator _orderValidator = new();
 
-	CreateOrderRequest Model = new();
+	readonly CreateOrderRequest _model = new();
 	
 	DateTime? _date = DateTime.Today;
 
 
 	private async Task Submit()
     {
-		Model.DateTime = new DateTime(_date!.Value.Year, _date.Value.Month, _date.Value.Day);
+		_model.DateTime = new DateTime(_date!.Value.Year, _date.Value.Month, _date.Value.Day);
 		
-        await _form.Validate();
+        await _form!.Validate();
 
         if (_form.IsValid)
         {
-	        await Mediator.Send(Model);
+	        await Mediator.Send(_model);
 	        NavigationManager.NavigateTo("orders");
         }
     }

@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Application.Common.DTOs;
 using Domain.Entities;
 using FluentValidation;
 
 namespace WebUI.Validators;
 
-public class ContactInfoValidator : AbstractValidator<ContactInfo>
+public class ContactInfoValidator : AbstractValidator<ContactInfoDto>
 {
     public ContactInfoValidator()
     {
@@ -26,9 +27,10 @@ public class ContactInfoValidator : AbstractValidator<ContactInfo>
 
     public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
     {
-        var result = await ValidateAsync(ValidationContext<ContactInfo>.CreateWithOptions((ContactInfo)model, x => x.IncludeProperties(propertyName)));
+        var result = await ValidateAsync(ValidationContext<ContactInfoDto>.CreateWithOptions((ContactInfoDto)model, x => x.IncludeProperties(propertyName)));
         if (result.IsValid)
             return Array.Empty<string>();
         return result.Errors.Select(e => e.ErrorMessage);
     };
+    
 }
