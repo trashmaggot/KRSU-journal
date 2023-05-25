@@ -21,7 +21,7 @@ public static class DataSeed
         {
             orders.Add(new Order()
             {
-                Id = i,
+                Id = Guid.NewGuid(),
                 Weight = i,
                 DateTime = DateTime.Today.AddDays(-i),
                 Sender = new ContactInfo()
