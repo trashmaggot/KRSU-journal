@@ -1,8 +1,7 @@
 ﻿@page "/create"
-@using FluentValidation
 @using Application.Features.OrderFeatures.Commands.CreateOrderCommand
-@using Domain.Entities
 @using MediatR
+@using WebUI.Validators
 @inject IMediator Mediator
 @inject NavigationManager NavigationManager
 @implements IDisposable
@@ -64,7 +63,7 @@
 
     MudForm? _form;
 
-	readonly OrderModelFluentValidator _orderValidator = new();
+	readonly CreateOrderRequestValidator _orderValidator = new();
 
 	CreateOrderRequest Model = new();
 	
@@ -82,60 +81,6 @@
 	        await Mediator.Send(Model);
 	        NavigationManager.NavigateTo("orders");
         }
-    }
-	
-    public class OrderModelFluentValidator : AbstractValidator<CreateOrderRequest>
-    {
-        public OrderModelFluentValidator()
-        {
-            RuleFor(x => x.Weight)
-                .NotEmpty()
-                .InclusiveBetween(1, 1000000);
-
-	        RuleFor(x => x.DateTime)
-		        .NotEmpty()
-		        .LessThanOrEqualTo(date => DateTime.Now);
-
-	        RuleFor(x => x.Sender)
-		        .SetValidator(new ContactInfoValidator());
-	
-	        RuleFor(x => x.Receiver)
-		        .SetValidator(new ContactInfoValidator());
-        }
-
-	    public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
-        {
-            var result = await ValidateAsync(ValidationContext<CreateOrderRequest>.CreateWithOptions((CreateOrderRequest)model, x => x.IncludeProperties(propertyName)));
-            if (result.IsValid)
-                return Array.Empty<string>();
-            return result.Errors.Select(e => e.ErrorMessage);
-        };
-    }
-	
-    public class ContactInfoValidator : AbstractValidator<ContactInfo>
-    {
-        public ContactInfoValidator()
-        {
-            RuleFor(x => x.Address)
-                .NotEmpty()
-                .Length(1, 50);
-
-			RuleFor(x => x.City)
-				.NotEmpty()
-				.Length(1, 50);
-	
-	        RuleFor(x => x.Name)
-		        .NotEmpty()
-		        .Length(1, 100);
-        }
-
-        public Func<object, string, Task<IEnumerable<string>>> ValidateValue => async (model, propertyName) =>
-        {
-            var result = await ValidateAsync(ValidationContext<ContactInfo>.CreateWithOptions((ContactInfo)model, x => x.IncludeProperties(propertyName)));
-            if (result.IsValid)
-                return Array.Empty<string>();
-            return result.Errors.Select(e => e.ErrorMessage);
-        };
     }
 
 	public void Dispose()
