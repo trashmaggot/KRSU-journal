@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -16,14 +15,13 @@ namespace Persistence.Migrations
                 name: "Orders",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Sender_Name = table.Column<string>(type: "text", nullable: false),
-                    Sender_City = table.Column<string>(type: "text", nullable: false),
-                    Sender_Address = table.Column<string>(type: "text", nullable: false),
-                    Receiver_Name = table.Column<string>(type: "text", nullable: false),
-                    Receiver_City = table.Column<string>(type: "text", nullable: false),
-                    Receiver_Address = table.Column<string>(type: "text", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Sender_Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Sender_City = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Sender_Address = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Receiver_Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Receiver_City = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Receiver_Address = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Weight = table.Column<int>(type: "integer", nullable: false),
                     DateTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
                 },
