@@ -14,6 +14,11 @@ public static class PersistenceConfiguration
         var connectionString = configuration.GetConnectionString("db-connection");
         services.AddDbContext<Context>(opt => opt.UseNpgsql(connectionString));
 
-        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IOrderRepository,      OrderRepository>();
+        services.AddScoped<IStudentRepository,    StudentRepository>();
+        services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+        services.AddScoped<ICourseRepository,     CourseRepository>();
+        services.AddScoped<IGroupRepository,      GroupRepository>();
+        services.AddScoped<ILessonRepository,     LessonRepository>();
     }
 }

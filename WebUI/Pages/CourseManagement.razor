@@ -1,0 +1,111 @@
+﻿@page "/course-management"
+@using Application.Features.CourseFeatures.Commands.CreateCourseCommand
+@using Application.Features.CourseFeatures.Queries.GetCoursesQuery
+@using Application.Features.GroupFeatures.Queries.GetGroupsQuery
+@using MediatR
+@using Application.Features.CourseFeatures.Commands.AddGroupForCourse
+@inject IMediator Mediator
+@inject NavigationManager NavigationManager
+
+<MudContainer>
+    <MudPaper Class="pa-4">
+        <MudTypography Typo="Typo.h4">Список курсов</MudTypography>
+        @if (_courses != null)
+        {
+            <MudTable Items="_courses" Dense="true">
+                <HeaderContent>
+                    <MudTh>Название курса</MudTh>
+                    <MudTh>Группы</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="course">
+                    <MudTd>@course.Name</MudTd>
+                    <MudTd>
+                        <MudSelect T="string" Label="Группы" Disabled="false">
+                            @foreach (var group in course.Groups)
+                            {
+                                <MudSelectItem Value="@group.Name">
+                                    <a href="/attendance/@course.Id/@group.Id">@group.Name</a>
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                        <span style="margin-left: 0.5rem;">(@course.Groups.Count)</span>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudProgressCircular Color="Color.Primary"/>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-4 mt-4">
+        <MudTypography Typo="Typo.h4">Создание нового курса</MudTypography>
+        <MudForm Model="_courseForm">
+            <MudTextField Label="Название курса" @bind-Value="_courseForm.Name" Required="true" />
+            <MudTextField Label="Часы" @bind-Value="_courseForm.Hours" Required="true" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(async () => await CreateCourse())">Создать</MudButton>
+        </MudForm>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 mt-4">
+        <MudTypography Typo="Typo.h4">Добавить группу к курсу</MudTypography>
+        <MudForm Model="_addGroupForm">
+            <MudSelect T="Guid" Label="Курс" @bind-Value="_addGroupForm.CourseId" Required="true">
+                @foreach (var course in _courses)
+                {
+                    <MudSelectItem Value="@course.Id">@course.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect T="Guid" Label="Группа" @bind-Value="_addGroupForm.GroupId" Required="true">
+                @foreach (var group in _groups)
+                {
+                    <MudSelectItem Value="@group.Id">@group.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(async () => await AddGroupToCourse())">Добавить</MudButton>
+        </MudForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<GetCoursesResponse> _courses = new();
+    private List<GroupDto> _groups = new();
+    private CreateCourseRequest _courseForm = new();
+    private AddGroupForCourseCommand _addGroupForm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCourses();
+        await LoadGroups();
+    }
+
+    private async Task LoadCourses()
+    {
+        _courses = await Mediator.Send(new GetCoursesRequest());
+    }
+
+    private async Task LoadGroups()
+    {
+        _groups = await Mediator.Send(new GetGroupsRequest());
+    }
+
+    private async Task CreateCourse()
+    {
+        await Mediator.Send(_courseForm);
+        _courseForm = new CreateCourseRequest(); // Clear form
+        await LoadCourses(); // Refresh course list
+    }
+
+    private async Task AddGroupToCourse()
+    {
+        await Mediator.Send(_addGroupForm);
+        _addGroupForm = new AddGroupForCourseCommand(); // Clear form
+        await LoadCourses(); // Refresh course list to show the new group
+    }
+    
+    private void GoToAttendance(Guid courseId, Guid groupId)
+    {
+        NavigationManager.NavigateTo($"/attendance/{courseId}/{groupId}");
+    }
+}

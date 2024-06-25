@@ -1,0 +1,67 @@
+﻿@page "/group-details/{groupId}"
+@using Application.Features.GroupFeatures.Queries.GetGroupStudentsQuery
+@using MediatR
+@using Application.Features.GroupFeatures.Commands.AddStudentToGroupCommand
+
+@inject IMediator mediator
+
+<MudContainer>
+    <MudPaper>
+        <MudTypography Typo="Typo.h4">Студенты группы</MudTypography>
+        <MudTable Items="@_students" Dense="true">
+            <HeaderContent>
+                <MudTh>Имя</MudTh>
+                <MudTh>Отчество</MudTh>
+                <MudTh>Фамилия</MudTh>
+            </HeaderContent>
+            <RowTemplate Context="student">
+                <MudTd>@student.FirstName</MudTd>
+                <MudTd>@student.MiddleName</MudTd>
+                <MudTd>@student.LastName</MudTd>
+            </RowTemplate>
+        </MudTable>
+
+        <MudDivider />
+
+        <MudTypography Typo="Typo.h4">Добавить нового студента</MudTypography>
+        <MudForm Model="@_studentForm">
+            <MudTextField Label="Имя" @bind-Value="_studentForm.FirstName" Required="true" />
+            <MudTextField Label="Отчество" @bind-Value="_studentForm.MiddleName" Required="true" />
+            <MudTextField Label="Фамилия" @bind-Value="_studentForm.LastName" Required="true" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await AddStudent())">Добавит студента</MudButton>
+        </MudForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public string GroupId { get; set; }
+
+    private List<GetGroupStudentsResponse> _students = new();
+    private GetGroupStudentsResponse _studentForm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStudents();
+    }
+
+    private async Task LoadStudents()
+    {
+        var result = await mediator.Send(new GetGroupStudentsRequest { GroupId = new Guid(GroupId) });
+        _students = result;
+    }
+
+    private async Task AddStudent()
+    {
+        await mediator.Send(new AddStudentToGroupRequest
+        {
+            GroupId = new Guid(GroupId),
+            FirstName = _studentForm.FirstName,
+            MiddleName = _studentForm.MiddleName,
+            LastName = _studentForm.LastName
+        });
+
+        await LoadStudents();
+        _studentForm = new GetGroupStudentsResponse();
+    }
+}

@@ -1,0 +1,191 @@
+﻿@page "/attendance/{courseId}/{groupId}"
+@using System.Globalization
+@using Application.Features.GroupFeatures.Queries.GetGroupStudentsQuery
+@using Application.Features.LessonFeatures.Commands.CreateLessonCommand
+@using Application.Features.LessonFeatures.Commands.UpdateLessonAttendances
+@using Application.Features.LessonFeatures.Queries.GetLessonsQuery
+@using MediatR
+@inject IMediator Mediator
+@inject NavigationManager NavigationManager
+
+<MudContainer Style="min-height: 100vh; padding: 1rem;">
+    <MudTable Items="@pagedStudents" Hover="true" Bordered="true" ServerData="LoadServerData" RowsPerPage="7">
+        <HeaderContent>
+            <MudTh>Имя студента</MudTh>
+            @foreach (var date in PagedDates)
+            {
+                <MudTh>@date.ToString("dd MMM yyyy HH:mm", CultureInfo.InvariantCulture)</MudTh>
+            }
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Student.FirstName @context.Student.LastName</MudTd>
+            @foreach (var date in PagedDates)
+            {
+                <MudTd>
+                    <MudCheckBox @bind-Checked="@context.Attendance[date]" />
+                </MudTd>
+            }
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+    
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(async () => await UpdateAttendances())">Обновить посещаемость</MudButton>
+    
+    <MudPaper Class="pa-4 mt-4 mb-8">
+            <MudTypography Typo="Typo.h4">Создать урок</MudTypography>
+            <MudForm Model="_createLessonForm">
+                <MudDatePicker Label="Дата" @bind-Date="_createLessonForm.Date" Required="true" />
+                <MudTimePicker Label="Время" @bind-Time="_createLessonForm.Time" Required="true" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(async () => await CreateLesson())">Создать</MudButton>
+            </MudForm>
+        </MudPaper>
+</MudContainer>
+
+
+@code {
+    [Parameter]
+    public string CourseId { get; set; }
+    [Parameter]
+    public string GroupId { get; set; }
+    
+    private List<DateTime> dates = new();
+    private List<StudentAttendance> studentsAttendance = new();
+    private List<StudentAttendance> pagedStudents = new();
+    private List<DateTime> PagedDates = new();
+    private int totalItems;
+    private int currentPage;
+    private int pageSize = 7;
+
+    private Guid courseId;
+    private Guid groupId;
+    
+    private CreateLessonForm _createLessonForm = new();
+
+    private List<GetLessonsResponse> _lessons = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Guid.TryParse(CourseId, out courseId))
+        {
+            return;
+        }
+
+        if (!Guid.TryParse(GroupId, out groupId))
+        {
+            return;
+        }
+
+        // Load data using MediatR
+        var lessonsRequest = new GetLessonsRequest { CourseId = courseId, GroupId = groupId, Page = 1, Size = 100 };
+        var lessonsResponse = await Mediator.Send(lessonsRequest);
+
+        var studentsRequest = new GetGroupStudentsRequest { GroupId = groupId };
+        var studentsResponse = await Mediator.Send(studentsRequest);
+
+        dates = lessonsResponse.Select(x => x.DateTime).OrderBy(x => x).ToList();
+
+        _lessons = lessonsResponse;
+
+        foreach (var student in studentsResponse)
+        {
+            var attendance = new Dictionary<DateTime, bool>();
+            
+            foreach (var date in dates)
+            {
+                var lessonAttendance = lessonsResponse
+                    .FirstOrDefault(l => l.DateTime.Date == date.Date)?.Attedances
+                    .FirstOrDefault(a => a.StudentId == student.StudentId);
+                
+                attendance[date] = lessonAttendance?.IsAttend ?? false;
+            }
+
+            studentsAttendance.Add(new StudentAttendance
+            {
+                Student = student,
+                Attendance = attendance
+            });
+        }
+
+        totalItems = dates.Count;
+    }
+
+    private Task<TableData<StudentAttendance>> LoadServerData(TableState state)
+    {
+        currentPage = state.Page;
+        pageSize = state.PageSize;
+
+        PagedDates = dates.Skip(currentPage * pageSize).Take(pageSize).ToList();
+        pagedStudents = studentsAttendance.Skip(currentPage * pageSize).Take(pageSize).ToList();
+
+        return Task.FromResult(new TableData<StudentAttendance>
+        {
+            Items = pagedStudents,
+            TotalItems = totalItems
+        });
+    }
+
+    public class StudentAttendance
+    {
+        public GetGroupStudentsResponse Student { get; set; }
+        public Dictionary<DateTime, bool> Attendance { get; set; }
+    }
+    
+    public class CreateLessonForm
+    {
+        public DateTime? Date { get; set; }
+        public TimeSpan? Time { get; set; }
+    }
+    
+    private async Task CreateLesson()
+    {
+        if (_createLessonForm.Date is null || _createLessonForm.Time is null) return;
+        
+        var createLessonRequest = new CreateLessonRequest
+        {
+            DateTime = _createLessonForm.Date.Value + _createLessonForm.Time.Value,
+            CourseId = courseId,
+            GroupId = groupId
+        };
+
+        await Mediator.Send(createLessonRequest);
+        _createLessonForm = new CreateLessonForm();
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+    }
+    
+    
+    private async Task UpdateAttendances()
+    {
+        var attendancesToUpdate = new List<UpdateLessonAttendancesRequest.UpdateLessonAttendancesDto>();
+
+        foreach (var studentAttendance in studentsAttendance)
+        {
+            foreach (var attendance in studentAttendance.Attendance)
+            {
+                var a = _lessons.FirstOrDefault(x => x.DateTime.Equals(attendance.Key))?
+                    .Attedances.FirstOrDefault(x => x.StudentId == studentAttendance.Student.StudentId);
+                
+                if (a is null) continue;
+                
+                var lessonAttendance = new UpdateLessonAttendancesRequest.UpdateLessonAttendancesDto
+                {
+                    Id = a.Id,
+                    IsAttend = attendance.Value
+                };
+                attendancesToUpdate.Add(lessonAttendance);
+            }
+        }
+
+        var updateRequest = new UpdateLessonAttendancesRequest
+        {
+            Attendances = attendancesToUpdate
+        };
+
+        await Mediator.Send(updateRequest);
+        NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+    }
+    
+    // Define your GetLessonsRequest and GetGroupStudentsRequest classes here
+    // Define your GetLessonsResponse and GetGroupStudentsResponse classes here
+}

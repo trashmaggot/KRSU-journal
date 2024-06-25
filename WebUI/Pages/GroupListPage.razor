@@ -1,0 +1,55 @@
+﻿@page "/group-management"
+@using Application.Features.GroupFeatures.Commands.CreateGroupCommand
+@using Application.Features.GroupFeatures.Queries.GetGroupsQuery
+@using MediatR
+
+@inject IMediator Mediator
+
+<MudContainer>
+    <MudPaper Color="Color.Info" Class="pa-4">
+        <MudTypography Typo="Typo.h4">Список групп</MudTypography>
+        <MudTable Items="@_groups" Dense="true">
+            <HeaderContent>
+                <MudTh>Название группы</MudTh>
+                <MudTh>Действия</MudTh>
+            </HeaderContent>
+            <RowTemplate Context="group">
+                <MudTd>@group.Name</MudTd>
+                <MudTd>
+                    <MudLink href="@($"group-details/{group.Id}")">Студенты</MudLink>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+
+    <MudPaper Color="Color.Success" Class="pa-4 mt-4">
+        <MudTypography Typo="Typo.h4">Создание новой группы</MudTypography>
+        <MudForm Model="@_groupForm">
+            <MudTextField Label="Название группы" @bind-Value="_groupForm.Name" Required="true" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await CreateGroup())">Создать</MudButton>
+        </MudForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<GroupDto> _groups = new();
+    private readonly CreateGroupRequest _groupForm = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGroups();
+    }
+
+    private async Task LoadGroups()
+    {
+        var result = await Mediator.Send(new GetGroupsRequest());
+        _groups = result;
+    }
+
+    private async Task CreateGroup()
+    {
+        await Mediator.Send(_groupForm);
+        Console.WriteLine("Created");
+        await LoadGroups(); // Перезагружаем список групп после создания новой группы
+    }
+}
